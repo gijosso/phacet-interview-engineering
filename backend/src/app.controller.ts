@@ -48,7 +48,7 @@ export class AppController {
 
   @Sse('/sse/chat')
   async sse(@Query('prompt') prompt: string, @Query('model') model: Model) {
-    // passing prompt as a testing workaround instead of broadcasting after a post request
+    // Passing prompt as a testing workaround instead of broadcasting after a post request
     return await this.chatService.getChatServerSentEvents({ prompt, model });
   }
 }

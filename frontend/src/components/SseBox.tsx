@@ -7,6 +7,7 @@ export const SseBox: React.FC = () => {
   const [messages, setMessages] = React.useState<string[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
+  // Generating new EventSource for testing purposes only
   const handleSubmit = React.useCallback(() => {
     if (!prompt) {
       setError("Prompt is required");
