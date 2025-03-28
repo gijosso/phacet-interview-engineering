@@ -1,20 +1,25 @@
-import { Body, Controller, Get, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Logger,
+  Res,
+  Query,
+  Sse,
+} from '@nestjs/common';
+import { Response } from 'express';
 import { AppService } from './app.service';
-import { OpenAiService } from './open-ai/open-ai.service';
-
-interface ChatInput {
-  prompt: string;
-}
-
-class ChatOuput {
-  completion: string;
-}
+import { ChatService, Model } from './chat.service';
+import { ChatInput, ChatOuput } from './open-ai/open-ai.service';
 
 @Controller()
 export class AppController {
+  private readonly logger = new Logger(AppController.name);
+
   constructor(
     private readonly appService: AppService,
-    private readonly openAIservice: OpenAiService,
+    private readonly chatService: ChatService,
   ) {}
 
   @Get()
@@ -29,13 +34,21 @@ export class AppController {
 
   @Post('/api/chat')
   async postChat(@Body() chatInput: ChatInput): Promise<ChatOuput> {
-    // Validation param here
-    const chatCompletion = await this.openAIservice.chat(
-      chatInput.prompt,
-      '123',
-    );
-    return {
-      completion: chatCompletion.choices[0].message.content || 'No response',
-    };
+    return await this.chatService.getChatResponse(chatInput);
+  }
+
+  // TODO: FIXME
+  @Post('/api/chat-long-polling')
+  async getChatLongPolling(
+    @Body() chatInput: ChatInput,
+    @Res() response: Response,
+  ) {
+    await this.chatService.getChatLongPollingResponse(chatInput, response);
+  }
+
+  @Sse('/sse/chat')
+  async sse(@Query('prompt') prompt: string, @Query('model') model: Model) {
+    // passing prompt as a testing workaround instead of broadcasting after a post request
+    return await this.chatService.getChatServerSentEvents({ prompt, model });
   }
 }

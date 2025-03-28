@@ -1,12 +1,22 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
+import { Model } from 'src/chat.service';
+
+export interface ChatInput {
+  prompt: string;
+  openaiClientID?: string;
+  model?: Model;
+}
+
+export class ChatOuput {
+  completion: string;
+}
 
 @Injectable()
 export class OpenAiService {
   private readonly openAiClient: OpenAI;
   private readonly model: string;
-  private readonly instructions: string;
   private readonly maxTokens: number;
   private readonly maxNumberOfChoices: number;
 
@@ -30,16 +40,24 @@ export class OpenAiService {
     this.maxNumberOfChoices = 1;
   }
 
-  async chat(question: string, openaiClientID: string) {
-    const aiResponse: OpenAI.ChatCompletion =
-      await this.openAiClient.chat.completions.create({
-        user: openaiClientID,
-        model: this.model,
-        messages: [{ role: 'user', content: question }],
-        ...(this.maxTokens ? { max_tokens: this.maxTokens } : {}),
-        ...(this.maxNumberOfChoices ? { n: this.maxNumberOfChoices } : {}),
-      });
+  async getCompletion(chatInput: ChatInput) {
+    return this.openAiClient.chat.completions.create({
+      user: chatInput.openaiClientID || 'local',
+      model: chatInput.model || this.model,
+      messages: [{ role: 'user', content: chatInput.prompt }],
+      ...(this.maxTokens ? { max_tokens: this.maxTokens } : {}),
+      ...(this.maxNumberOfChoices ? { n: this.maxNumberOfChoices } : {}),
+    });
+  }
 
-    return aiResponse;
+  async getStreamCompletion(chatInput: ChatInput) {
+    return await this.openAiClient.chat.completions.create({
+      user: chatInput.openaiClientID || 'local',
+      model: chatInput.model || this.model,
+      messages: [{ role: 'user', content: chatInput.prompt }],
+      ...(this.maxTokens ? { max_tokens: this.maxTokens } : {}),
+      ...(this.maxNumberOfChoices ? { n: this.maxNumberOfChoices } : {}),
+      stream: true,
+    });
   }
 }
